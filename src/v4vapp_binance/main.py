@@ -4,8 +4,10 @@ from decimal import ROUND_DOWN, ROUND_UP, Decimal
 from pprint import pprint
 
 from binance.error import ClientError
-from binance.spot import Spot as Client  # type: ignore
+from binance.spot import Spot as Client
+from dotenv import load_dotenv  # type: ignore
 
+load_dotenv()
 api_key = os.getenv("BINANCE_API_KEY")
 api_secret = os.getenv("BINANCE_SECRET_KEY")
 
@@ -79,6 +81,15 @@ def get_open_orders_for_symbol(symbol: str, testnet: bool = False):
     return open_orders
 
 
+def get_trades_for_symbol(symbol: str, testnet: bool = False):
+    """
+    Get trades for a specific symbol
+    """
+    client = get_client(testnet)
+    trades = client.my_trades(symbol=symbol)
+    return trades
+
+
 def place_order(
     symbol: str,
     side: str,
@@ -103,6 +114,7 @@ def place_order(
     try:
         response = client.new_order(**params)
         logging.info(response)
+        pprint(response)
     except ClientError as error:
         logging.error(
             "Found error. status: {}, error code: {}, error message: {}".format(
@@ -112,6 +124,9 @@ def place_order(
 
 
 def run():
+    trades = get_trades_for_symbol("HIVEBTC", testnet=False)
+    pprint(trades)
+
     price = get_current_price("HIVEBTC")
     logging.info(price)
     balances = get_balances(["HIVE", "BTC"])
@@ -125,18 +140,18 @@ def run():
     open_orders = get_open_orders_for_symbol("HIVEBTC", testnet=True)
     pprint(open_orders)
 
-    sell_price = Decimal(price["ask_price"])  # * Decimal(0.99)
-    sell_price = sell_price.quantize(Decimal("0.00000001"), rounding=ROUND_DOWN)
-    place_order(
-        symbol="HIVEBTC", side="SELL", quantity=100, price=sell_price, testnet=True
-    )
-    logging.info("Open orders for HIVEBTC:")
-    open_orders = get_open_orders_for_symbol("HIVEBTC", testnet=True)
-    pprint(open_orders)
+    # sell_price = Decimal(price["ask_price"])  # * Decimal(0.99)
+    # sell_price = sell_price.quantize(Decimal("0.00000001"), rounding=ROUND_DOWN)
+    # place_order(
+    #     symbol="HIVEBTC", side="SELL", quantity=100, price=sell_price, testnet=True
+    # )
+    # logging.info("Open orders for HIVEBTC:")
+    # open_orders = get_open_orders_for_symbol("HIVEBTC", testnet=True)
+    # pprint(open_orders)
 
-    logging.info("Testnet account balances:")
-    balances = get_balances(["HIVE", "BTC"], testnet=True)
-    logging.info(balances)
+    # logging.info("Testnet account balances:")
+    # balances = get_balances(["HIVE", "BTC"], testnet=True)
+    # logging.info(balances)
 
     buy_price = Decimal(price["bid_price"])  # * Decimal(1.01)
     buy_price = buy_price.quantize(Decimal("0.00000001"), rounding=ROUND_UP)
