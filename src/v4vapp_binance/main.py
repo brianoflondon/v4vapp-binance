@@ -3,11 +3,15 @@ import os
 from decimal import ROUND_DOWN, ROUND_UP, Decimal
 from pprint import pprint
 
-from binance.error import ClientError
-from binance.spot import Spot as Client
 from dotenv import load_dotenv  # type: ignore
 
-from v4vapp_binance.binance import get_client, get_current_price
+from v4vapp_binance.binance import (
+    get_balances,
+    get_current_price,
+    get_open_orders_for_symbol,
+    get_trades_for_symbol,
+    place_order,
+)
 
 load_dotenv()
 api_key = os.getenv("BINANCE_API_KEY")
@@ -22,72 +26,6 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)-8s %(module)-14s %(lineno) 5d : %(message)s",
     datefmt="%Y-%m-%dT%H:%M:%S%z",
 )
-
-
-
-
-def get_balances(symbols: list, testnet: bool = False) -> dict:
-    """
-    Get balances for a list of symbols
-    """
-    client = get_client(testnet)
-    account = client.account()
-    balances = {symbol: 0.0 for symbol in symbols}  # Initialize all balances to 0.0
-    for balance in account["balances"]:
-        if balance["asset"] in symbols:
-            balances[balance["asset"]] = float(balance["free"])
-    return balances
-
-
-def get_open_orders_for_symbol(symbol: str, testnet: bool = False):
-    """
-    Get open orders for a specific symbol
-    """
-    client = get_client(testnet)
-    open_orders = client.get_open_orders(symbol=symbol)
-    return open_orders
-
-
-def get_trades_for_symbol(symbol: str, testnet: bool = False):
-    """
-    Get trades for a specific symbol
-    """
-    client = get_client(testnet)
-    trades = client.my_trades(symbol=symbol)
-    return trades
-
-
-def place_order(
-    symbol: str,
-    side: str,
-    quantity: Decimal,
-    price: Decimal,
-    testnet: bool = False,
-    order_type: str = "LIMIT",
-    time_in_force: str = "GTC",
-):
-    """
-    Place a new order
-    """
-    client = get_client(testnet)
-    params = {
-        "symbol": symbol,
-        "side": side,
-        "type": order_type,
-        "timeInForce": time_in_force,
-        "quantity": str(quantity),
-        "price": str(price),
-    }
-    try:
-        response = client.new_order(**params)
-        logging.info(response)
-        pprint(response)
-    except ClientError as error:
-        logging.error(
-            "Found error. status: {}, error code: {}, error message: {}".format(
-                error.status_code, error.error_code, error.error_message
-            )
-        )
 
 
 def run():
