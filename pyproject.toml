@@ -8,6 +8,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
+binance-connector = "^3.5.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -16,3 +17,6 @@ pytest = "^7.4.3"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.flake8]
+max-line-length = 88
