@@ -1,6 +1,11 @@
 from binance.spot import Spot as Client  # type: ignore
 
-from v4vapp_binance.binance import get_balances, get_client, get_current_price
+from v4vapp_binance.binance import (
+    get_balances,
+    get_client,
+    get_current_price,
+    place_order,
+)
 
 
 def test_get_client():
@@ -54,3 +59,35 @@ def test_get_balances():
     assert len(balances) == 2
     assert balances["BTC"] > 0.0
     assert balances["HIVE"] > 0.0
+
+
+def test_place_order():
+    price = get_current_price("HIVEBTC", testnet=True)
+    balances = get_balances(["BTC", "HIVE"], testnet=True)
+    if "BTC" in balances:
+        balances["sats"] = round(balances["BTC"] * 1e8,0)
+    # round the quantity to 1 decimal place
+    quantity = balances["HIVE"] * 0.01
+    quantity = round(quantity, 0)
+
+    ans = place_order(
+        symbol="HIVEBTC",
+        side="SELL",
+        quantity=quantity,
+        price=price["ask_price"],
+        testnet=True,
+    )
+    assert ans is not None
+    assert ans.get("error") is None
+    balances_after = get_balances(["BTC", "HIVE"], testnet=True)
+    if "BTC" in balances_after:
+        balances_after["sats"] = balances_after["BTC"] * 1e8
+    print()
+    print(balances)
+    print(balances_after)
+    # show the delta in balances
+    # round this to 8 decimal places
+
+    print({k: balances_after[k] - balances[k] for k in balances_after})
+
+    # for the balances if the symbol name is BTC add another entry with sats which 1e8 * the BTC balance

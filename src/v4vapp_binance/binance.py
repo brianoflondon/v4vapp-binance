@@ -120,4 +120,4 @@ def place_order(
                 error.status_code, error.error_code, error.error_message
             )
         )
-        return {}
+        return {"error": error.error_message}
