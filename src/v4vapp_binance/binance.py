@@ -62,6 +62,8 @@ def get_balances(symbols: list, testnet: bool = False) -> dict:
         for balance in account["balances"]:
             if balance["asset"] in symbols:
                 balances[balance["asset"]] = float(balance["free"])
+        if "BTC" in balances and balances["BTC"] > 0.0:
+            balances["SATS"] = int(balances["BTC"] * 100_000_000)
         return balances
     except ClientError as error:
         logging.error(

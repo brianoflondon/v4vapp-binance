@@ -49,23 +49,25 @@ def test_get_balances():
         # whitelisted on Binance
         pass
     else:
-        assert len(balances) == 2
         assert balances["BTC"] >= 0.0
         assert balances["HIVE"] >= 0.0
+        if "BTC" in balances:
+            assert balances["SATS"] >= 0.0
 
     balances = get_balances(["BTC", "HIVE"], testnet=True)
     assert balances is not None
     assert type(balances) is dict
-    assert len(balances) == 2
     assert balances["BTC"] > 0.0
     assert balances["HIVE"] > 0.0
+    if "BTC" in balances:
+        assert balances["SATS"] >= 0.0
 
 
 def test_place_order():
     price = get_current_price("HIVEBTC", testnet=True)
     balances = get_balances(["BTC", "HIVE"], testnet=True)
     if "BTC" in balances:
-        balances["sats"] = round(balances["BTC"] * 1e8,0)
+        balances["sats"] = round(balances["BTC"] * 1e8, 0)
     # round the quantity to 1 decimal place
     quantity = balances["HIVE"] * 0.01
     quantity = round(quantity, 0)
