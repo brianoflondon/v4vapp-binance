@@ -45,18 +45,18 @@ def run():
     open_orders = get_open_orders_for_symbol("HIVEBTC", testnet=True)
     pprint(open_orders)
 
-    # sell_price = Decimal(price["ask_price"])  # * Decimal(0.99)
-    # sell_price = sell_price.quantize(Decimal("0.00000001"), rounding=ROUND_DOWN)
-    # place_order(
-    #     symbol="HIVEBTC", side="SELL", quantity=100, price=sell_price, testnet=True
-    # )
-    # logging.info("Open orders for HIVEBTC:")
-    # open_orders = get_open_orders_for_symbol("HIVEBTC", testnet=True)
-    # pprint(open_orders)
+    sell_price = Decimal(price["ask_price"])  # * Decimal(0.99)
+    sell_price = sell_price.quantize(Decimal("0.00000001"), rounding=ROUND_DOWN)
+    place_order(
+        symbol="HIVEBTC", side="SELL", quantity=100, price=sell_price, testnet=True
+    )
+    logging.info("Open orders for HIVEBTC:")
+    open_orders = get_open_orders_for_symbol("HIVEBTC", testnet=True)
+    pprint(open_orders)
 
-    # logging.info("Testnet account balances:")
-    # balances = get_balances(["HIVE", "BTC"], testnet=True)
-    # logging.info(balances)
+    logging.info("Testnet account balances:")
+    balances = get_balances(["HIVE", "BTC"], testnet=True)
+    logging.info(balances)
 
     buy_price = Decimal(price["bid_price"])  # * Decimal(1.01)
     buy_price = buy_price.quantize(Decimal("0.00000001"), rounding=ROUND_UP)
