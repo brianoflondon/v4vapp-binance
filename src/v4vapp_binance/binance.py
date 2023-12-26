@@ -92,6 +92,51 @@ def get_trades_for_symbol(symbol: str, testnet: bool = False) -> list:
     return trades
 
 
+def place_order_now(
+    from_asset: str,
+    to_asset: str,
+    side: str,  # make this buy or sell with an enu,
+    quantity: Decimal,
+    price: str,
+    order_id: str = "",
+    testnet: bool = False,
+) -> dict:
+    """
+    Place a new order, checks balances and places order if there are sufficient funds
+    """
+    balances = {
+        "before": get_balances([from_asset, to_asset], testnet=testnet),
+    }
+    if price == "now":
+        prices = get_current_price(f"{from_asset}{to_asset}", testnet=testnet)
+        if side == "BUY":
+            price_d = Decimal(prices["ask_price"])
+        elif side == "SELL":
+            price_d = Decimal(prices["bid_price"])
+
+    ans = place_order(
+        symbol=f"{from_asset}{to_asset}",
+        side=side,
+        quantity=quantity,
+        price=price_d,
+        order_id=order_id,
+        testnet=testnet,
+    )
+    balances["after"] = get_balances([from_asset, to_asset], testnet=testnet)
+    balances["delta"] = {  # Calculate the difference in balances
+        k: balances["after"][k] - balances["before"][k] for k in balances["after"]
+    }
+    if "HIVE" in balances["after"]:
+        balances["delta"]["SATS/HIVE"] = int(
+            balances["delta"]["SATS"] / balances["delta"]["HIVE"]
+        )
+    if "BTC" in balances["delta"]:
+        balances["delta"]["BTC"] = round(balances["delta"]["BTC"], 8)
+    ans["prices"] = prices
+    ans["balances"] = balances
+    return ans
+
+
 def place_order(
     symbol: str,
     side: str,
@@ -100,6 +145,7 @@ def place_order(
     testnet: bool = False,
     order_type: str = "LIMIT",
     time_in_force: str = "GTC",
+    order_id: str = "",
 ) -> dict:
     """
     Place a new order
@@ -113,6 +159,8 @@ def place_order(
         "quantity": str(quantity),
         "price": str(price),
     }
+    if order_id:
+        params["newClientOrderId"] = order_id
     try:
         response = client.new_order(**params)
         return response

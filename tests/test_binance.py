@@ -92,4 +92,22 @@ def test_place_order():
 
     print({k: balances_after[k] - balances[k] for k in balances_after})
 
-    # for the balances if the symbol name is BTC add another entry with sats which 1e8 * the BTC balance
+@pytest.mark.parametrize("side", ["BUY", "SELL"])
+def test_place_order_now(side):
+    ans = place_order_now(
+        from_asset="HIVE",
+        to_asset="BTC",
+        quantity=20,
+        side=side,
+        price="now",
+        testnet=True,
+    )
+    pprint(ans)
+    assert ans is not None
+    assert ans.get("error") is None
+    assert ans.get("prices") is not None
+    assert ans.get("balances") is not None
+    assert ans.get("balances").get("before") is not None
+    assert ans.get("balances").get("after") is not None
+    assert ans.get("balances").get("delta") is not None
+    assert ans.get("balances").get("delta").get("BTC") is not None
