@@ -1,10 +1,15 @@
+from pprint import pprint
+
+import pytest
 from binance.spot import Spot as Client  # type: ignore
 
 from v4vapp_binance.binance import (
     get_balances,
     get_client,
     get_current_price,
+    get_quote,
     place_order,
+    place_order_now,
 )
 
 
@@ -87,10 +92,26 @@ def test_place_order():
     print()
     print(balances)
     print(balances_after)
-    # show the delta in balances
-    # round this to 8 decimal places
-
     print({k: balances_after[k] - balances[k] for k in balances_after})
+
+
+def test_get_pairs():
+    client = get_client()
+    pairs = client.exchange_info()
+    for pair in pairs["symbols"]:
+        if "HIVE" in pair["symbol"]:
+            print(pair["symbol"])
+
+
+def test_get_quote():
+    quote = get_quote(
+        from_asset="HIVEBTC", to_asset="BTC", from_amount=10, testnet=False
+    )
+    print(quote)
+
+
+# parameterize this test with buy and sell
+
 
 @pytest.mark.parametrize("side", ["BUY", "SELL"])
 def test_place_order_now(side):

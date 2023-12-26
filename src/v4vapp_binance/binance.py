@@ -171,3 +171,31 @@ def place_order(
             )
         )
         return {"error": error.error_message}
+
+
+def get_quote(
+    from_asset: str, to_asset: str, from_amount: float, testnet: bool = False
+) -> dict:
+    """
+    Get quote for a symbol
+    Waiting for permission from Bianance to use this endpoint
+    """
+    client = Client(api_key=api_key, api_secret=api_secret)
+    try:
+        response = client.send_quote_request(
+            fromAsset=from_asset,
+            toAsset=to_asset,
+            fromAmount=from_amount,
+            validTime="10s",
+            walletType="SPOT",
+            recvWindow=5000,
+        )
+        logging.info(response)
+        return response
+    except ClientError as error:
+        logging.error(
+            "Found error. status: {}, error code: {}, error message: {}".format(
+                error.status_code, error.error_code, error.error_message
+            )
+        )
+        return {"error": error.error_message}
