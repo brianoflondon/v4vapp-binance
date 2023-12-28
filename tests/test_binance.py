@@ -75,7 +75,7 @@ def test_place_order():
     if "BTC" in balances:
         balances["sats"] = round(balances["BTC"] * 1e8, 0)
     # round the quantity to 1 decimal place
-    quantity = balances["HIVE"] * 0.01
+    quantity = balances["HIVE"] * 0.1
     quantity = round(quantity, 0)
 
     ans = place_order(
