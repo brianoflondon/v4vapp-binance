@@ -1,6 +1,6 @@
 import logging
 import os
-from decimal import Decimal
+from decimal import ROUND_DOWN, ROUND_UP, Decimal
 
 from binance.error import ClientError  # type: ignore
 from binance.spot import Spot as Client  # type: ignore
@@ -12,6 +12,10 @@ api_secret = os.getenv("BINANCE_SECRET_KEY")
 
 testnet_api_key = os.getenv("TESTNET_API_KEY")
 testnet_api_secret = os.getenv("TESTNET_SECRET_KEY")
+
+
+class BinanceErrorLowBalance(Exception):
+    pass
 
 
 def get_client(testnet: bool = False) -> Client:
@@ -100,9 +104,12 @@ def place_order_now(
     price: str,
     order_id: str = "",
     testnet: bool = False,
+    minimum_order: bool = False,
 ) -> dict:
     """
     Place a new order, checks balances and places order if there are sufficient funds
+    If Minimum order is set, then the order will be placed at minimum order size
+    for BTC 0.00001 (the to_asset must be BTC)
     """
     balances = {
         "before": get_balances([from_asset, to_asset], testnet=testnet),
@@ -114,6 +121,21 @@ def place_order_now(
         elif side == "SELL":
             price_d = Decimal(prices["bid_price"])
 
+    step_size = get_step_size(f"{from_asset}{to_asset}")
+
+    if minimum_order and to_asset == "BTC":
+        min_quantity = Decimal("0.00011") / price_d
+        quantity = max(quantity, min_quantity)
+
+    if type(quantity) is not Decimal:
+        quantity = Decimal(quantity)
+
+    quantity = round_decimal(quantity, step_size)
+
+    # Check the quantity in balance
+    if quantity > balances["before"][from_asset]:
+        raise BinanceErrorLowBalance
+
     ans = place_order(
         symbol=f"{from_asset}{to_asset}",
         side=side,
@@ -122,19 +144,55 @@ def place_order_now(
         order_id=order_id,
         testnet=testnet,
     )
+    # if ans.get("error"):
+    # return ans
     balances["after"] = get_balances([from_asset, to_asset], testnet=testnet)
     balances["delta"] = {  # Calculate the difference in balances
         k: balances["after"][k] - balances["before"][k] for k in balances["after"]
     }
-    if "HIVE" in balances["after"]:
-        balances["delta"]["SATS/HIVE"] = int(
-            balances["delta"]["SATS"] / balances["delta"]["HIVE"]
-        )
+    try:
+        if "HIVE" in balances["after"]:
+            balances["delta"]["SATS/HIVE"] = int(
+                balances["delta"]["SATS"] / balances["delta"]["HIVE"]
+            )
+    except ZeroDivisionError:
+        balances["delta"]["SATS/HIVE"] = 0
     if "BTC" in balances["delta"]:
         balances["delta"]["BTC"] = round(balances["delta"]["BTC"], 8)
     ans["prices"] = prices
     ans["balances"] = balances
     return ans
+
+
+def get_step_size(symbol: str) -> float:
+    # Get exchange info
+    client = Client(api_key=api_key, api_secret=api_secret)
+    info = client.exchange_info()
+
+    # Find the symbol and its PRICE_FILTER
+    for s in info["symbols"]:
+        if s["symbol"] == symbol:
+            for filter in s["filters"]:
+                if filter["filterType"] == "LOT_SIZE":
+                    return float(filter["stepSize"])
+
+    # If no PRICE_FILTER is found, return 0.0
+    return 0.1
+
+
+def round_decimal(value: Decimal, step_size: float) -> Decimal:
+    # Determine the number of decimal places in step_size
+    decimal_places = (
+        len(str(step_size).split(".")[1])
+        if "." in str(step_size) and str(step_size).split(".")[1] != "0"
+        else 0
+    )
+
+    # Create a pattern based on decimal_places
+    pattern = "0." + "0" * decimal_places if decimal_places > 0 else "0"
+
+    # Round value to the desired number of decimal places
+    return value.quantize(Decimal(pattern), rounding=ROUND_UP)
 
 
 def place_order(

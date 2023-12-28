@@ -4,6 +4,7 @@ import pytest
 from binance.spot import Spot as Client  # type: ignore
 
 from v4vapp_binance.binance import (
+    BinanceErrorLowBalance,
     get_balances,
     get_client,
     get_current_price,
@@ -132,3 +133,54 @@ def test_place_order_now(side):
     assert ans.get("balances").get("after") is not None
     assert ans.get("balances").get("delta") is not None
     assert ans.get("balances").get("delta").get("BTC") is not None
+
+
+@pytest.mark.parametrize("side", ["BUY", "SELL"])
+def test_place_order_now_minimums(side):
+    ans = place_order_now(
+        from_asset="HIVE",
+        to_asset="BTC",
+        quantity=1,
+        side=side,
+        price="now",
+        testnet=True,
+        minimum_order=False,
+    )
+    pprint(ans)
+    assert "LOT_SIZE" in ans.get("error") or "NOTIONAL" in ans.get("error")
+    ans = place_order_now(
+        from_asset="HIVE",
+        to_asset="BTC",
+        quantity=1,
+        side=side,
+        price="now",
+        testnet=True,
+        minimum_order=True,
+    )
+    pprint(ans)
+
+    assert ans is not None
+    assert ans.get("error") is None
+    assert ans.get("prices") is not None
+    assert ans.get("balances") is not None
+    assert ans.get("balances").get("before") is not None
+    assert ans.get("balances").get("after") is not None
+    assert ans.get("balances").get("delta") is not None
+    assert ans.get("balances").get("delta").get("BTC") is not None
+
+
+def test_balance_error():
+    balance = get_balances(["BTC", "HIVE"], testnet=True)
+
+    # Check that place_order_now raises a specific error
+    with pytest.raises(
+        BinanceErrorLowBalance
+    ):  # Replace ExpectedError with the actual error class
+        place_order_now(
+            from_asset="HIVE",
+            to_asset="BTC",
+            quantity=balance["HIVE"] + 1,
+            side="SELL",
+            price="now",
+            testnet=True,
+        )
