@@ -5,6 +5,7 @@ description = "A tool for matched trading on Binance"
 authors = ["Brian of London (home imac) <brian@v4v.app>"]
 license = "MIT"
 readme = "README.md"
+include = ["py.typed"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -16,6 +17,7 @@ mypy-extensions = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
+
 
 [build-system]
 requires = ["poetry-core"]
