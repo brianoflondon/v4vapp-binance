@@ -4,6 +4,7 @@ import pytest
 from binance.spot import Spot as Client  # type: ignore
 
 from v4vapp_binance.binance import (
+    BinanceErrorBadConnection,
     BinanceErrorLowBalance,
     get_balances,
     get_client,
@@ -47,18 +48,20 @@ def test_get_current_price():
 
 
 def test_get_balances():
-    balances = get_balances(["BTC", "HIVE"])
-    assert balances is not None
-    assert type(balances) is dict
-    if len(balances) == 0:
-        # this will be called if the IP address is not
-        # whitelisted on Binance
-        pass
-    else:
+    try:
+        balances = get_balances(["BTC", "HIVE"])
+        assert balances is not None
+        assert type(balances) is dict
+
         assert balances["BTC"] >= 0.0
         assert balances["HIVE"] >= 0.0
         if "BTC" in balances:
             assert balances["SATS"] >= 0.0
+    except BinanceErrorBadConnection as ex:
+        # this will be called if the IP address is not
+        # whitelisted on Binance
+        assert ex is not None
+        print("IP Address not whitelisted")
 
     balances = get_balances(["BTC", "HIVE"], testnet=True)
     assert balances is not None
