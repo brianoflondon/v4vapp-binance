@@ -50,20 +50,18 @@ def test_get_current_price():
 def test_get_balances():
     try:
         balances = get_balances(["BTC", "HIVE"])
+        assert balances is not None
+        assert type(balances) is dict
+
+        assert balances["BTC"] >= 0.0
+        assert balances["HIVE"] >= 0.0
+        if "BTC" in balances:
+            assert balances["SATS"] >= 0.0
     except BinanceErrorBadConnection as ex:
         # this will be called if the IP address is not
         # whitelisted on Binance
         assert ex is not None
-        print("IP Address not whitelisted can't fully test")
-        return
-    # check for error if IP address is not whitelisted
-    assert balances is not None
-    assert type(balances) is dict
-
-    assert balances["BTC"] >= 0.0
-    assert balances["HIVE"] >= 0.0
-    if "BTC" in balances:
-        assert balances["SATS"] >= 0.0
+        print("IP Address not whitelisted")
 
     balances = get_balances(["BTC", "HIVE"], testnet=True)
     assert balances is not None
