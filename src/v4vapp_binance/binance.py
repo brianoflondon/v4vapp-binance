@@ -1,6 +1,6 @@
 import logging
 import os
-from decimal import ROUND_DOWN, ROUND_UP, Decimal
+from decimal import ROUND_UP, Decimal
 
 from binance.error import ClientError  # type: ignore
 from binance.spot import Spot as Client  # type: ignore
@@ -15,6 +15,10 @@ testnet_api_secret = os.getenv("TESTNET_SECRET_KEY")
 
 
 class BinanceErrorLowBalance(Exception):
+    pass
+
+
+class BinanceErrorBadConnection(Exception):
     pass
 
 
@@ -57,7 +61,9 @@ def get_current_price(symbol: str, testnet: bool = False) -> dict:
 
 def get_balances(symbols: list, testnet: bool = False) -> dict:
     """
-    Get balances for a list of symbols
+    Get balances for a list of symbols.
+    This will work always on testnet. If the IP address is not whitelisted on Binance
+    then it will fail and raise BinanceErrorBadConnection
     """
     try:
         client = get_client(testnet)
@@ -75,7 +81,7 @@ def get_balances(symbols: list, testnet: bool = False) -> dict:
                 error.status_code, error.error_code, error.error_message
             )
         )
-        return {}  # Return an empty dictionary instead of None
+        raise BinanceErrorBadConnection(error.error_message)
 
 
 def get_open_orders_for_symbol(symbol: str, testnet: bool = False) -> list:
@@ -107,13 +113,44 @@ def place_order_now(
     minimum_order: bool = False,
 ) -> dict:
     """
-    Place a new order, checks balances and places order if there are sufficient funds
-    If Minimum order is set, then the order will be placed at minimum order size
-    for BTC 0.00001 (the to_asset must be BTC)
+    Places a new order on Binance.
+
+    This function first checks the balances of the from_asset and to_asset.
+    If there are sufficient funds, it places an order. If the 'minimum_order'
+    flag is set, the order will be placed at the minimum order size for BTC
+    (0.00001), and the 'to_asset' must be BTC.
+
+    The 'side' parameter determines whether the order is a buy or sell order.
+    The 'price' parameter determines the price at which the order is placed.
+    If 'price' is set to "now", the current ask price is used for buy orders
+    and the current bid price is used for sell orders.
+
+    Parameters:
+        from_asset (str): The asset to sell.
+        to_asset (str): The asset to buy.
+        side (str): The side of the order. Must be "BUY" or "SELL".
+        quantity (Decimal): The quantity of the asset to sell.
+        price (str): The price at which to place the order. If set to "now",
+                    the current market price is used.
+        order_id (str, optional): The ID of the order. Defaults to an empty string.
+        testnet (bool, optional): Whether to use the Binance testnet. Defaults to False.
+        minimum_order (bool, optional): Whether to place the order at the minimum
+                                        order size for BTC. Defaults to False.
+
+    Returns:
+        dict: The response from the Binance API.
+
+    Raises:
+        BinanceErrorBadConnection: If the IP address is not whitelisted on Binance.
+        BinanceErrorLowBalance: If the balance is too low to place the order.
     """
-    balances = {
-        "before": get_balances([from_asset, to_asset], testnet=testnet),
-    }
+
+    try:
+        balances = {
+            "before": get_balances([from_asset, to_asset], testnet=testnet),
+        }
+    except BinanceErrorBadConnection as e:
+        raise BinanceErrorBadConnection(e)
     if price == "now":
         prices = get_current_price(f"{from_asset}{to_asset}", testnet=testnet)
         if side == "BUY":
