@@ -18,6 +18,10 @@ class BinanceErrorLowBalance(Exception):
     pass
 
 
+class BinanceErrorBadConnection(Exception):
+    pass
+
+
 def get_client(testnet: bool = False) -> Client:
     """
     Get a Binance API client
@@ -75,7 +79,7 @@ def get_balances(symbols: list, testnet: bool = False) -> dict:
                 error.status_code, error.error_code, error.error_message
             )
         )
-        return {}  # Return an empty dictionary instead of None
+        raise BinanceErrorBadConnection(error.error_message)
 
 
 def get_open_orders_for_symbol(symbol: str, testnet: bool = False) -> list:
@@ -111,9 +115,12 @@ def place_order_now(
     If Minimum order is set, then the order will be placed at minimum order size
     for BTC 0.00001 (the to_asset must be BTC)
     """
-    balances = {
-        "before": get_balances([from_asset, to_asset], testnet=testnet),
-    }
+    try:
+        balances = {
+            "before": get_balances([from_asset, to_asset], testnet=testnet),
+        }
+    except BinanceErrorBadConnection as e:
+        raise BinanceErrorBadConnection(e)
     if price == "now":
         prices = get_current_price(f"{from_asset}{to_asset}", testnet=testnet)
         if side == "BUY":
