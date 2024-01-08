@@ -1,7 +1,7 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from binance.error import ClientError
+from binance.error import ClientError  # type: ignore
 
 from v4vapp_binance.binance import BinanceErrorBadConnection, get_balances
 
