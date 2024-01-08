@@ -7,11 +7,11 @@ from binance.spot import Spot as Client  # type: ignore
 from dotenv import load_dotenv  # type: ignore
 
 load_dotenv()
-api_key = os.getenv("BINANCE_API_KEY")
-api_secret = os.getenv("BINANCE_SECRET_KEY")
+api_key = os.getenv("BINANCE_API_KEY", "")
+api_secret = os.getenv("BINANCE_SECRET_KEY", "")
 
-testnet_api_key = os.getenv("TESTNET_API_KEY")
-testnet_api_secret = os.getenv("TESTNET_SECRET_KEY")
+testnet_api_key = os.getenv("TESTNET_API_KEY", "")
+testnet_api_secret = os.getenv("TESTNET_SECRET_KEY", "")
 
 
 class BinanceErrorLowBalance(Exception):
