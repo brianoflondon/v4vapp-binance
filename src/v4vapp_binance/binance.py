@@ -82,6 +82,10 @@ def get_balances(symbols: list, testnet: bool = False) -> dict:
             )
         )
         raise BinanceErrorBadConnection(error.error_message)
+    except Exception as error:
+        logging.error(error)
+        raise BinanceErrorBadConnection(error)
+
 
 
 def get_open_orders_for_symbol(symbol: str, testnet: bool = False) -> list:
