@@ -84,10 +84,11 @@ def test_place_order_now_testnet(side, binance_testnet_down):
     ans = place_order_now(
         from_asset="HIVE",
         to_asset="BTC",
-        quantity=20,
+        quantity=100,
         side=side,
         price="now",
         testnet=True,
+        minimum_order=True
     )
     pprint(ans)
     assert ans is not None
